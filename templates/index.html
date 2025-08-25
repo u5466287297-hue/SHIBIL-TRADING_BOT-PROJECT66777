@@ -1,1 +1,118 @@
-Същото съдържание от v4 index.html
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Trading Bot Pro v4.1</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #00ffcc;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .container {
+            width: 95%;
+            margin: auto;
+        }
+        canvas {
+            background: #1a1a1a;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .stats, .signals {
+            margin: 15px 0;
+            padding: 10px;
+            background: #111;
+            border-radius: 10px;
+        }
+        select, button {
+            padding: 5px 10px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #00ffcc;
+            color: black;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Trading Bot Pro v4.1</h1>
+
+    <div>
+        <label for="asset">Избери актив:</label>
+        <select id="asset">
+            {% for a in assets %}
+            <option value="{{ a }}">{{ a }}</option>
+            {% endfor %}
+        </select>
+        <button onclick="loadData()">Обнови</button>
+    </div>
+
+    <div class="signals">
+        <h2>Последен сигнал: <span id="signal">NONE</span></h2>
+        <h3>История:</h3>
+        <ul id="history"></ul>
+    </div>
+
+    <div class="stats">
+        <h3>Статистика:</h3>
+        <p>Win: <span id="win">0</span></p>
+        <p>Loss: <span id="loss">0</span></p>
+        <p>Accuracy: <span id="accuracy">0%</span></p>
+    </div>
+
+    <div class="container">
+        <canvas id="chart_price" height="120"></canvas>
+        <canvas id="chart_rsi" height="80"></canvas>
+        <canvas id="chart_macd" height="80"></canvas>
+        <canvas id="chart_atr" height="80"></canvas>
+        <canvas id="chart_adx" height="80"></canvas>
+    </div>
+
+<script>
+let priceChart, rsiChart, macdChart, atrChart, adxChart;
+
+async function loadData() {
+    const asset = document.getElementById("asset").value;
+    const res = await fetch(`/api/signal?asset=${asset}`);
+    const data = await res.json();
+
+    document.getElementById("signal").innerText = data.signal;
+    document.getElementById("win").innerText = data.stats.win;
+    document.getElementById("loss").innerText = data.stats.loss;
+    document.getElementById("accuracy").innerText = data.stats.accuracy;
+
+    const historyEl = document.getElementById("history");
+    historyEl.innerHTML = "";
+    data.history.forEach(h => {
+        let li = document.createElement("li");
+        li.innerText = h;
+        historyEl.appendChild(li);
+    });
+
+    const labels = data.chart.Datetime;
+
+    const close = data.chart.Close;
+    const ema5 = data.chart.EMA5;
+    const ema20 = data.chart.EMA20;
+    const bbUpper = data.chart.BB_UPPER;
+    const bbLower = data.chart.BB_LOWER;
+
+    const rsi = data.chart.RSI;
+    const macd = data.chart.MACD;
+    const macdSignal = data.chart.MACD_Signal;
+    const atr = data.chart.ATR;
+    const adx = data.chart.ADX;
+
+    // Price chart
+    if (priceChart) priceChart.destroy();
+    priceChart = new Chart(document.getElementById("chart_price"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {label:"Close", data: close, borderColor:"#00ffcc", fill:false},
+                {label:"EMA5", data: ema5, borderColor:"yellow", fill:false},
+                {lab
